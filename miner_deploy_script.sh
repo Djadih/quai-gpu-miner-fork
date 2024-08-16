@@ -30,6 +30,7 @@ apt install -y build-essential cmake mesa-common-dev tmux git
 # clone quai-gpu-miner
 git clone https://github.com/djadih/quai-gpu-miner-fork /home/user/quai-gpu-miner
 cd /home/user/quai-gpu-miner
+git checkout nvidia-build
 git submodule update --init --recursive
 
 # create build directory
