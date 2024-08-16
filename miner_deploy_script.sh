@@ -27,7 +27,7 @@ fi
 apt install -y build-essential cmake mesa-common-dev tmux
 
 # clone quai-gpu-miner
-git clone https://github.com/dominant-strategies/quai-gpu-miner /home/user/quai-gpu-miner
+git clone https://github.com/djadih/quai-gpu-miner-fork /home/user/quai-gpu-miner
 cd /home/user/quai-gpu-miner
 git submodule update --init --recursive
 
