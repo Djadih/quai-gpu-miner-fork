@@ -24,6 +24,7 @@ else
 fi
 
 # install dependencies
+apt update
 apt install -y build-essential cmake mesa-common-dev tmux
 
 # clone quai-gpu-miner
