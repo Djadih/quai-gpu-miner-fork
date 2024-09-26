@@ -52,7 +52,7 @@ __constant const uint32_t ravencoin_rndc[15] = {
 };
 
 // Implementation of the Keccakf transformation with a width of 800
-void keccak_f800_round(uint32_t st[25], const int r)
+void keccak_f800_round(__global uint32_t st[25], const int r)
 {
     const uint32_t keccakf_rotc[24] = {
         1, 3, 6, 10, 15, 21, 28, 36, 45, 55, 2, 14, 27, 41, 56, 8, 25, 43, 62, 18, 39, 61, 20, 44};
