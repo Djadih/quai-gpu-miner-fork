@@ -76,16 +76,37 @@ void keccak_f800_round(uint32_t st[25], const int r)
     st[0] ^= keccakf_rndc[r];
 }
 
-// Keccak - implemented as a variant of SHAKE
-// The width is 800, with a bitrate of 576, a capacity of 224, and no padding
-// Only need 64 bits of output for mining
-uint64_t keccak_f800(uint32_t* st)
+// Function to swap bytes (similar to CUDA's cuda_swab32)
+uint32_t opencl_swab32(uint32_t x)
 {
-    // Complete all 22 rounds as a separate impl to
-    // evaluate only first 8 words is wasteful of regsters
-    for (int r = 0; r < 22; r++) {
+    return ((x & 0x000000FF) << 24) |
+           ((x & 0x0000FF00) << 8) |
+           ((x & 0x00FF0000) >> 8) |
+           ((x & 0xFF000000) >> 24);
+}
+
+// Modified Keccak function for OpenCL
+uint64_t keccak_f800(uint32_t* st, hash32_t header, uint64_t seed, hash32_t digest)
+{
+    // Initialize the state as in CUDA
+    for (int i = 0; i < 25; i++)
+        st[i] = 0;
+    for (int i = 0; i < 8; i++)
+        st[i] = header.uint32s[i];
+    st[8] = (uint32_t)seed;
+    st[9] = (uint32_t)(seed >> 32);
+    for (int i = 0; i < 8; i++)
+        st[10 + i] = digest.uint32s[i];
+
+    // Run 21 rounds like CUDA
+    for (int r = 0; r < 21; r++) {
         keccak_f800_round(st, r);
     }
+    // Run the last round separately
+    keccak_f800_round(st, 21);
+
+    // Apply byte swapping to match CUDA's output
+    return ((uint64_t)opencl_swab32(st[0]) << 32) | opencl_swab32(st[1]);
 }
 
 #define fnv1a(h, d) (h = (h ^ d) * FNV_PRIME)
