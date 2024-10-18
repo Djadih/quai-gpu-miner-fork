@@ -86,7 +86,7 @@ uint32_t opencl_swab32(uint32_t x)
 }
 
 // Version 1: Keccak function that takes the state directly
-uint64_t keccak_f800(uint32_t* st)
+uint64_t keccak_f800_state(uint32_t* st)
 {
     // Run 21 rounds like CUDA
     for (int r = 0; r < 21; r++) {
@@ -113,7 +113,7 @@ uint64_t keccak_f800(hash32_t header, uint64_t seed, hash32_t digest)
         st[10 + i] = digest.uint32s[i];
 
     // Call the version that takes the state directly
-    return keccak_f800(st);
+    return keccak_f800_state(st);
 }
 
 #define fnv1a(h, d) (h = (h ^ d) * FNV_PRIME)
@@ -228,7 +228,7 @@ uint32_t state2[8];
 
 
     // Run intial keccak round
-    keccak_f800(state);
+    keccak_f800_state(state);
 
     for (int i = 0; i < 8; i++)
         state2[i] = state[i];
@@ -290,7 +290,7 @@ uint32_t state2[8];
 
 
         // Run keccak loop
-        keccak_f800(state);
+        keccak_f800_state(state);
 
         uint64_t res = (uint64_t)state[1] << 32 | state[0];
         result = as_ulong(as_uchar8(res).s76543210);
