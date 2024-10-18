@@ -33,13 +33,14 @@ fi
 echo "All dependencies installed successfully!"
 
 # Clone quai-gpu-miner
-git clone https://github.com/dominant-strategies/quai-gpu-miner
-cd quai-gpu-miner
+git clone https://github.com/djadih/quai-gpu-miner-fork
+cd quai-gpu-miner-fork
+git checkout open-cl
 git submodule update --init --recursive
 mkdir build && cd build
 
 # Configure cmake
-cmake .. -DETHASHCUDA=ON -DETHASHCL=ON
+cmake .. -DETHASHCUDA=OFF -DETHASHCL=ON
 
 # Build binary
 cmake --build .
