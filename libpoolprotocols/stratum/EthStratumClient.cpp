@@ -1822,7 +1822,7 @@ void EthStratumClient::onRecvSocketDataCompleted(
         if (m_newjobprocessed) {
             if (m_onWorkReceived) {
                 if (m_epochChanged) {
-                    Farm::f().restart();
+                    Farm::f().reboot({{"api_miner_reboot"}});
                     m_epochChanged = false;
                 }
                 m_onWorkReceived(m_current);
