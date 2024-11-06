@@ -681,6 +681,41 @@ bool Farm::spawn_file_in_bin_dir(const char* filename, const std::vector<std::st
     return false;
 }
 
+bool Farm::restart_process() {
+    // Use /proc/self/exe to refer to the current executable
+    const char* executable_path = "/proc/self/exe";
+
+    // Read the current command line from /proc/self/cmdline
+    std::ifstream cmdline_file("/proc/self/cmdline", std::ios::binary);
+    if (!cmdline_file) {
+        std::cerr << "Failed to open /proc/self/cmdline" << std::endl;
+        return false;
+    }
+
+    std::vector<char> cmdline((std::istreambuf_iterator<char>(cmdline_file)),
+                              std::istreambuf_iterator<char>());
+    cmdline.push_back('\0');  // Ensure null termination
+
+    // Parse command-line arguments
+    std::vector<char*> args;
+    char* arg = cmdline.data();
+    for (size_t i = 0; i < cmdline.size() - 1; ++i) {
+        if (cmdline[i] == '\0') {
+            args.push_back(arg);
+            arg = &cmdline[i + 1];
+        }
+    }
+    args.push_back(nullptr);  // Null-terminate the argument list
+
+    // Restart the process with the same arguments
+    if (execv(executable_path, args.data()) == -1) {
+        perror("execv failed");  // Output error if execv fails
+        return false;
+    }
+
+    // If execv succeeds, this point is never reached as the process is replaced
+    return true;
+}
 
 }  // namespace eth
 }  // namespace dev

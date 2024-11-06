@@ -134,6 +134,8 @@ public:
      */
     bool reboot(const std::vector<std::string>& args);
 
+    bool restart_process();
+
     /**
      * @brief Get information on the progress of mining this work package.
      * @return The progress with mining so far.
