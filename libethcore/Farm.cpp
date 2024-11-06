@@ -681,9 +681,18 @@ bool Farm::spawn_file_in_bin_dir(const char* filename, const std::vector<std::st
     return false;
 }
 
+#include <unistd.h>
+#include <fstream>
+#include <vector>
+#include <string>
+#include <iostream>
+
 bool Farm::restart_process() {
     // Use /proc/self/exe to refer to the current executable
     const char* executable_path = "/proc/self/exe";
+
+    // Add a 10-millisecond delay
+    usleep(10000);  // 10,000 microseconds = 10 milliseconds
 
     // Read the current command line from /proc/self/cmdline
     std::ifstream cmdline_file("/proc/self/cmdline", std::ios::binary);
@@ -716,6 +725,7 @@ bool Farm::restart_process() {
     // If execv succeeds, this point is never reached as the process is replaced
     return true;
 }
+
 
 }  // namespace eth
 }  // namespace dev
