@@ -694,6 +694,19 @@ bool Farm::restart_process() {
     // Add a 10-millisecond delay
     usleep(10000);  // 10,000 microseconds = 10 milliseconds
 
+    // Close all open file descriptors except standard ones (0, 1, 2)
+    DIR* dir = opendir("/proc/self/fd");
+    if (dir) {
+        struct dirent* entry;
+        while ((entry = readdir(dir)) != nullptr) {
+            int fd = atoi(entry->d_name);
+            if (fd > 2) {  // Skip standard file descriptors
+                close(fd);
+            }
+        }
+        closedir(dir);
+    }
+
     // Read the current command line from /proc/self/cmdline
     std::ifstream cmdline_file("/proc/self/cmdline", std::ios::binary);
     if (!cmdline_file) {
@@ -725,7 +738,6 @@ bool Farm::restart_process() {
     // If execv succeeds, this point is never reached as the process is replaced
     return true;
 }
-
 
 }  // namespace eth
 }  // namespace dev
