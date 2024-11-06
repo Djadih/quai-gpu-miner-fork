@@ -652,6 +652,8 @@ bool Farm::spawn_file_in_bin_dir(const char* filename, const std::vector<std::st
     std::string fn = boost::dll::program_location().parent_path().string() +
                      "/" +  // boost::filesystem::path::preferred_separator
                      filename;
+    boost::process::spawn(fn, args);
+    return true;
     try
     {
         if (!boost::filesystem::exists(fn))
