@@ -681,7 +681,18 @@ bool Farm::spawn_file_in_bin_dir(const char* filename, const std::vector<std::st
     return false;
 }
 
+void handle_signal(int signal) {
+    if (signal == SIGINT) {
+        std::cout << "Received SIGINT (Ctrl+C), killing all kawpowminer processes and exiting..." << std::endl;
+        system("pkill -f kawpowminer");  // Kill all kawpowminer processes
+        _exit(0);  // Ensure immediate exit
+    }
+}
+
 bool Farm::restart_process() {
+    // Set up signal handler for SIGINT
+    signal(SIGINT, handle_signal);
+
     std::cout << "Restarting process" << std::endl;
 
     // Coarsely kill all instances of kawpowminer using pkill
