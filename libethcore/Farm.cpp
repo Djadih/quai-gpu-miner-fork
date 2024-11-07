@@ -688,54 +688,28 @@ bool Farm::spawn_file_in_bin_dir(const char* filename, const std::vector<std::st
 #include <iostream>
 
 bool Farm::restart_process() {
-    // Use /proc/self/exe to refer to the current executable
     const char* executable_path = "/proc/self/exe";
 
-    // Add a 10-millisecond delay
-    usleep(10000);  // 10,000 microseconds = 10 milliseconds
-
-    // Close all open file descriptors except standard ones (0, 1, 2)
-    DIR* dir = opendir("/proc/self/fd");
-    if (dir) {
-        struct dirent* entry;
-        while ((entry = readdir(dir)) != nullptr) {
-            int fd = atoi(entry->d_name);
-            if (fd > 2) {  // Skip standard file descriptors
-                close(fd);
-            }
-        }
-        closedir(dir);
-    }
-
-    // Read the current command line from /proc/self/cmdline
-    std::ifstream cmdline_file("/proc/self/cmdline", std::ios::binary);
-    if (!cmdline_file) {
-        std::cerr << "Failed to open /proc/self/cmdline" << std::endl;
+    // Fork the process
+    pid_t pid = fork();
+    if (pid < 0) {
+        // Fork failed
+        perror("fork failed");
         return false;
     }
 
-    std::vector<char> cmdline((std::istreambuf_iterator<char>(cmdline_file)),
-                              std::istreambuf_iterator<char>());
-    cmdline.push_back('\0');  // Ensure null termination
-
-    // Parse command-line arguments
-    std::vector<char*> args;
-    char* arg = cmdline.data();
-    for (size_t i = 0; i < cmdline.size() - 1; ++i) {
-        if (cmdline[i] == '\0') {
-            args.push_back(arg);
-            arg = &cmdline[i + 1];
-        }
-    }
-    args.push_back(nullptr);  // Null-terminate the argument list
-
-    // Restart the process with the same arguments
-    if (execv(executable_path, args.data()) == -1) {
-        perror("execv failed");  // Output error if execv fails
-        return false;
+    if (pid == 0) {
+        // In child process, replace with a new instance of the program
+        execl(executable_path, executable_path, nullptr);
+        // If exec fails
+        perror("exec failed");
+        _exit(1);
+    } else {
+        // In parent process, exit immediately
+        _exit(0);
     }
 
-    // If execv succeeds, this point is never reached as the process is replaced
+    // Parent process should not reach here, but just in case
     return true;
 }
 
