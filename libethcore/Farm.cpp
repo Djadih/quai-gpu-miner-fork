@@ -718,6 +718,9 @@ bool Farm::restart_process() {
     }
     args.push_back(nullptr);  // Null-terminate the argument list
 
+    // Additional sleep before starting the new process
+    usleep(100000);  // Another 100 ms wait to ensure all cleanup
+
     std::cout << "Forking process" << std::endl;
     pid_t pid = fork();
 
