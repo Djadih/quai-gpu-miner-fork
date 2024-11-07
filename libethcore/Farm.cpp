@@ -688,10 +688,10 @@ bool Farm::spawn_file_in_bin_dir(const char* filename, const std::vector<std::st
 #include <iostream>
 
 bool Farm::restart_process() {
-    cnote << "restarting process";
+    std::cout << "Restarting process" << std::endl;
     const char* executable_path = "/proc/self/exe";
 
-    // Read the current command line from /proc/self/cmdline
+    // Get the command-line arguments for execv
     std::ifstream cmdline_file("/proc/self/cmdline", std::ios::binary);
     if (!cmdline_file) {
         std::cerr << "Failed to open /proc/self/cmdline" << std::endl;
@@ -702,7 +702,6 @@ bool Farm::restart_process() {
                               std::istreambuf_iterator<char>());
     cmdline.push_back('\0');  // Ensure null termination
 
-    // Parse command-line arguments into a vector of C-style strings
     std::vector<char*> args;
     char* arg = cmdline.data();
     for (size_t i = 0; i < cmdline.size() - 1; ++i) {
@@ -713,33 +712,28 @@ bool Farm::restart_process() {
     }
     args.push_back(nullptr);  // Null-terminate the argument list
 
-    cnote << "forking process";
-    // Fork the process
+    std::cout << "Forking process" << std::endl;
     pid_t pid = fork();
+
     if (pid < 0) {
         // Fork failed
         perror("fork failed");
         return false;
     }
-    cnote << "fork successful";
 
     if (pid == 0) {
-        cnote << "execing";
-        // In child process, replace with a new instance of the program with the same arguments
+        // Child process: exec with the same arguments
+        std::cout << "Child process execing..." << std::endl;
         execv(executable_path, args.data());
-        cnote << "exec successful";
-        // If exec fails
-        perror("exec failed");
-        _exit(1);
+        perror("exec failed");  // If exec fails
+        _exit(1);               // Exit if exec fails
     } else {
-        cnote << "this process should be exiting";
-        // In parent process, exit immediately
-        _exit(0);
+        // Parent process: force exit immediately
+        std::cout << "Parent process exiting immediately..." << std::endl;
+        _exit(0);   // Ensure the parent exits
     }
 
-    cnote << "really bad problem why are we here";
-    // Parent process should not reach here, but just in case
-    return true;
+    return true;  // Should never reach here
 }
 
 }  // namespace eth
