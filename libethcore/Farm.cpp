@@ -681,14 +681,20 @@ bool Farm::spawn_file_in_bin_dir(const char* filename, const std::vector<std::st
     return false;
 }
 
-#include <unistd.h>
-#include <fstream>
-#include <vector>
-#include <string>
-#include <iostream>
-
 bool Farm::restart_process() {
     std::cout << "Restarting process" << std::endl;
+
+    // Coarsely kill all instances of kawpowminer using pkill
+    std::cout << "Killing all instances of kawpowminer..." << std::endl;
+    int result = system("pkill -f kawpowminer");
+    if (result == -1) {
+        std::cerr << "Failed to execute pkill command" << std::endl;
+        return false;
+    }
+
+    // Wait briefly to ensure all processes are terminated
+    usleep(100000);  // Wait 100 ms
+
     const char* executable_path = "/proc/self/exe";
 
     // Get the command-line arguments for execv
@@ -728,13 +734,9 @@ bool Farm::restart_process() {
         perror("exec failed");  // If exec fails
         _exit(1);               // Exit if exec fails
     } else {
-        // Parent process: force exit immediately
+        // Parent process: force exit immediately with SIGKILL as a failsafe
         std::cout << "Parent process exiting immediately..." << std::endl;
-        pid_t parent_pid = getpid();
-        std::cout << "Forcefully killing parent process with PID: " << parent_pid << std::endl;
-        kill(parent_pid, SIGKILL);
-
-        _exit(0);   // Ensure the parent exits
+        kill(getpid(), SIGKILL);  // Aggressively kill parent
     }
 
     return true;  // Should never reach here
