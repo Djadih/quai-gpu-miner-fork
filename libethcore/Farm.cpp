@@ -690,6 +690,28 @@ bool Farm::spawn_file_in_bin_dir(const char* filename, const std::vector<std::st
 bool Farm::restart_process() {
     const char* executable_path = "/proc/self/exe";
 
+    // Read the current command line from /proc/self/cmdline
+    std::ifstream cmdline_file("/proc/self/cmdline", std::ios::binary);
+    if (!cmdline_file) {
+        std::cerr << "Failed to open /proc/self/cmdline" << std::endl;
+        return false;
+    }
+
+    std::vector<char> cmdline((std::istreambuf_iterator<char>(cmdline_file)),
+                              std::istreambuf_iterator<char>());
+    cmdline.push_back('\0');  // Ensure null termination
+
+    // Parse command-line arguments into a vector of C-style strings
+    std::vector<char*> args;
+    char* arg = cmdline.data();
+    for (size_t i = 0; i < cmdline.size() - 1; ++i) {
+        if (cmdline[i] == '\0') {
+            args.push_back(arg);
+            arg = &cmdline[i + 1];
+        }
+    }
+    args.push_back(nullptr);  // Null-terminate the argument list
+
     // Fork the process
     pid_t pid = fork();
     if (pid < 0) {
@@ -699,8 +721,8 @@ bool Farm::restart_process() {
     }
 
     if (pid == 0) {
-        // In child process, replace with a new instance of the program
-        execl(executable_path, executable_path, nullptr);
+        // In child process, replace with a new instance of the program with the same arguments
+        execv(executable_path, args.data());
         // If exec fails
         perror("exec failed");
         _exit(1);
