@@ -1518,7 +1518,7 @@ void EthStratumClient::processResponse(Json::Value& responseObject)
                 std::string enonce = jPrm.get(Json::Value::ArrayIndex(0), "").asString();
                 if (!processExtranonce(enonce))
                 {
-                    cwarn << "Disconnecting ...";
+                    cwarn << "Disconnecting minig.set_extranonce ...";
                     m_io_service.post(
                         m_io_strand.wrap(boost::bind(&EthStratumClient::disconnect, this)));
                 }
@@ -1565,9 +1565,8 @@ void EthStratumClient::processResponse(Json::Value& responseObject)
             string enonce = jPrm.get("extranonce", "").asString();
             if (!processExtranonce(enonce))
             {
-                cwarn << "Disconnecting ...";
-                m_io_service.post(
-                    m_io_strand.wrap(boost::bind(&EthStratumClient::disconnect, this)));
+                cwarn << "Disconnecting jprm.get(extranonce)...";
+                return;
             }
         }
         else if (_method == "mining.set_target") {
