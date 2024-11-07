@@ -688,6 +688,7 @@ bool Farm::spawn_file_in_bin_dir(const char* filename, const std::vector<std::st
 #include <iostream>
 
 bool Farm::restart_process() {
+    cnote << "restarting process";
     const char* executable_path = "/proc/self/exe";
 
     // Read the current command line from /proc/self/cmdline
@@ -712,6 +713,7 @@ bool Farm::restart_process() {
     }
     args.push_back(nullptr);  // Null-terminate the argument list
 
+    cnote << "forking process";
     // Fork the process
     pid_t pid = fork();
     if (pid < 0) {
@@ -719,18 +721,23 @@ bool Farm::restart_process() {
         perror("fork failed");
         return false;
     }
+    cnote << "fork successful";
 
     if (pid == 0) {
+        cnote << "execing";
         // In child process, replace with a new instance of the program with the same arguments
         execv(executable_path, args.data());
+        cnote << "exec successful";
         // If exec fails
         perror("exec failed");
         _exit(1);
     } else {
+        cnote << "this process should be exiting";
         // In parent process, exit immediately
         _exit(0);
     }
 
+    cnote << "really bad problem why are we here";
     // Parent process should not reach here, but just in case
     return true;
 }
