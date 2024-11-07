@@ -730,6 +730,10 @@ bool Farm::restart_process() {
     } else {
         // Parent process: force exit immediately
         std::cout << "Parent process exiting immediately..." << std::endl;
+        pid_t parent_pid = getpid();
+        std::cout << "Forcefully killing parent process with PID: " << parent_pid << std::endl;
+        kill(parent_pid, SIGKILL);
+
         _exit(0);   // Ensure the parent exits
     }
 
