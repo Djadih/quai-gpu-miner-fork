@@ -33,8 +33,9 @@ fi
 echo "All dependencies installed successfully!"
 
 # Clone quai-gpu-miner
-git clone https://github.com/dominant-strategies/quai-gpu-miner
-cd quai-gpu-miner
+git clone https://github.com/djadih/quai-gpu-miner-fork
+cd quai-gpu-miner-fork
+git switch farm-restart-rebase
 git submodule update --init --recursive
 
 # First build with CUDA enabled and OpenCL disabled
