@@ -681,39 +681,59 @@ bool Farm::spawn_file_in_bin_dir(const char* filename, const std::vector<std::st
     return false;
 }
 
+// Signal handler to terminate all processes gracefully
 void handle_signal(int signal) {
     if (signal == SIGINT) {
         std::cout << "Received SIGINT (Ctrl+C), killing all quai-gpu-miner processes and exiting..." << std::endl;
-        system("pkill -f quai-gpu-miner");  // Kill all quai-gpu-miner processes
-        _exit(0);  // Ensure immediate exit
+        system("pkill -f quai-gpu-miner");  // Kill all processes matching the name
+        _exit(0);
     }
 }
 
+// Helper function to ensure all processes are terminated
+bool ensure_termination() {
+    for (int retries = 0; retries < 5; ++retries) {
+        if (system("pgrep -f quai-gpu-miner > /dev/null") != 0) {
+            return true; // No matching process found
+        }
+        usleep(200000); // Wait 200ms and retry
+    }
+    std::cerr << "Failed to terminate all quai-gpu-miner processes." << std::endl;
+    return false;
+}
+
+// Restart function
 bool Farm::restart_process() {
     signal(SIGINT, handle_signal);
 
     std::cout << "Restarting for new epoch" << std::endl;
 
-    int result = system("pkill -f quai-gpu-miner");
-    if (result == -1) {
-        std::cerr << "Failed to execute pkill command" << std::endl;
+    // Kill existing processes
+    if (system("pkill -f quai-gpu-miner") == -1) {
+        std::cerr << "Failed to execute pkill command." << std::endl;
         return false;
     }
 
-    usleep(100000);  // Wait 100 ms
+    // Ensure all processes are terminated
+    if (!ensure_termination()) {
+        return false; // Exit if we cannot terminate all processes
+    }
 
+    // Get the current executable path
     const char* executable_path = "/proc/self/exe";
 
+    // Read the current process's command-line arguments
     std::ifstream cmdline_file("/proc/self/cmdline", std::ios::binary);
     if (!cmdline_file) {
-        std::cerr << "Failed to open /proc/self/cmdline" << std::endl;
+        std::cerr << "Failed to open /proc/self/cmdline." << std::endl;
         return false;
     }
 
     std::vector<char> cmdline((std::istreambuf_iterator<char>(cmdline_file)),
                               std::istreambuf_iterator<char>());
-    cmdline.push_back('\0');  // Ensure null termination
+    cmdline.push_back('\0'); // Null-terminate
 
+    // Parse arguments
     std::vector<char*> args;
     char* arg = cmdline.data();
     for (size_t i = 0; i < cmdline.size() - 1; ++i) {
@@ -724,26 +744,23 @@ bool Farm::restart_process() {
     }
     args.push_back(nullptr);
 
+    // Fork a new process
     pid_t pid = fork();
-
     if (pid < 0) {
         perror("fork failed");
         return false;
     }
 
     if (pid == 0) {
-        setsid();  // Start a new session for the child
-        execv(executable_path, args.data());
+        // In the child process
+        setsid(); // Create a new session
+        execv(executable_path, args.data()); // Restart the current executable
         perror("exec failed");
-        _exit(1);
-    } else {
-        // Wait for child to terminate to avoid orphans
-        int status;
-        if (waitpid(pid, &status, 0) == -1) {
-            perror("waitpid failed");
-            return false;
-        }
+        _exit(1); // Ensure the child exits if exec fails
     }
+
+    // In the parent process
+    std::cout << "New process started with PID " << pid << std::endl;
 
     return true;
 }
